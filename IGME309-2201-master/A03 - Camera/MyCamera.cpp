@@ -132,7 +132,7 @@ void Simplex::MyCamera::SetPositionTargetAndUpward(vector3 a_v3Position, vector3
 void Simplex::MyCamera::CalculateViewMatrix(void)
 {
 	//Calculate the look at most of your assignment will be reflected in this method
-	m_m4View = glm::lookAt(m_v3Position, m_v3Target, glm::normalize(m_v3Above - m_v3Position)); //position, target, upward
+	m_m4View = glm::lookAt(m_v3Position, m_v3Position + m_v3Forward, glm::normalize(m_v3Above - m_v3Position)); //position, target, upward
 }
 
 void Simplex::MyCamera::CalculateProjectionMatrix(void)
@@ -152,11 +152,46 @@ void Simplex::MyCamera::CalculateProjectionMatrix(void)
 
 void MyCamera::MoveForward(float a_fDistance)
 {
-	//The following is just an example and does not take in account the forward vector (AKA view vector)
-	m_v3Position += vector3(0.0f, 0.0f,-a_fDistance);
-	m_v3Target += vector3(0.0f, 0.0f, -a_fDistance);
-	m_v3Above += vector3(0.0f, 0.0f, -a_fDistance);
+	//save little bit of load by precalculate increment, same for vertical and sideway movement
+	vector3 forwardIncrement = glm::normalize(m_v3Forward) * a_fDistance;
+
+	//increase position by forward vector3 times a_fDistance
+	m_v3Position += forwardIncrement;
+
+	//change above vector3 also by forward vector3 times a_fDistance
+	m_v3Above += forwardIncrement;
 }
 
-void MyCamera::MoveVertical(float a_fDistance){}//Needs to be defined
-void MyCamera::MoveSideways(float a_fDistance){}//Needs to be defined
+void MyCamera::MoveVertical(float a_fDistance)
+{
+	vector3 rightIncrement = glm::normalize(m_v3Upward) * a_fDistance;
+
+	//increase position vector by rightward vector3 times a_fDistance
+	m_v3Position += rightIncrement;
+	
+	//update above vector3 with same value
+	m_v3Above += rightIncrement;
+}
+
+void MyCamera::MoveSideways(float a_fDistance)
+{
+	vector3 sidewayIncrement = glm::normalize(m_v3Rightward) * a_fDistance;
+
+	//update position and above vector with sideway increment
+	m_v3Position += sidewayIncrement;
+	m_v3Above += sidewayIncrement;
+}
+void Simplex::MyCamera::ChangeYaw(float angle)
+{
+	
+	//rotate both forward and rightward vector with rotation upward axis
+	m_v3Forward = m_v3Forward * glm::angleAxis(glm::radians(-angle), m_v3Upward);
+	m_v3Rightward = m_v3Rightward * glm::angleAxis(glm::radians(-angle), m_v3Upward);
+}
+void Simplex::MyCamera::ChangePitch(float angle)
+{
+	//rotate both forward and upward vector with rotation upward right(x axis at beginning)
+	m_v3Forward = m_v3Forward * glm::angleAxis(glm::radians(angle), m_v3Rightward);
+	m_v3Upward = m_v3Upward * glm::angleAxis(glm::radians(angle), m_v3Rightward);
+}
+//Needs to be defined
